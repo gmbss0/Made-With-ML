@@ -212,8 +212,8 @@ def train_model(
     run_config = RunConfig(callbacks=[mlflow_callback], checkpoint_config=checkpoint_config, storage_path=EFS_DIR, local_dir=EFS_DIR)
     
     # Dataset
-    ds = data.load_data(dataset_loc=dataset_loc, num_samples=train_loop_config["num_samples"])
-    train_ds, val_ds = data.stratify_split(ds, stratify="tag", test_size=0.2)
+    ds = data.load_dataset(path=dataset_loc, n=train_loop_config["num_samples"])
+    train_ds, val_ds = data.split_stratify(ds, col="tag", split=0.2)
     tags = train_ds.unique(column="tag")
     train_loop_config["num_classes"] = len(tags)
 

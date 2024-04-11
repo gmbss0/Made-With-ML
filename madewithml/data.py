@@ -6,10 +6,11 @@ from ray.data import Dataset
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-import nltk
-from nltk.corpus import stopwords as swords
+from transformers import PreTrainedTokenizer, BertTokenizer
 
-from transformers import Tokenizer, BertTokenizer
+from madewithml.config import STOPWORDS
+
+
 
 
 def load_dataset(path: str, n: int = None) -> Dataset:
@@ -29,7 +30,7 @@ def load_dataset(path: str, n: int = None) -> Dataset:
     return ds
 
 def split_stratify(ds: Dataset, col: str,
-                   split: float, shuffle: bool = True,
+                   split: float = 0.2, shuffle: bool = True,
                    seed: int = 10) -> Tuple[Dataset, Dataset]:
     """Split dataset into equal samples from each class in the column we
     want to stratify on.
@@ -70,7 +71,7 @@ def split_stratify(ds: Dataset, col: str,
     return train_ds, test_ds
 
 
-def clean_text(text: str, stopwords: List = None) -> str:
+def clean_text(text: str, stopwords: List = STOPWORDS) -> str:
     """Clean raw text.
 
     Args:
@@ -80,8 +81,6 @@ def clean_text(text: str, stopwords: List = None) -> str:
     Returns:
         str: cleaned text.
     """
-    if not stopwords:
-        stopwords = swords.words("english")
     # Lower
     text = text.lower()
 
@@ -99,7 +98,7 @@ def clean_text(text: str, stopwords: List = None) -> str:
     return text
 
 
-def tokenize(batch: Dict, tokenizer: Tokenizer = BertTokenizer) -> Dict:
+def tokenize(batch: Dict, tokenizer: PreTrainedTokenizer = BertTokenizer) -> Dict:
     """Tokenize the text input in our batch using a tokenizer.
 
     Args:
@@ -108,8 +107,7 @@ def tokenize(batch: Dict, tokenizer: Tokenizer = BertTokenizer) -> Dict:
     Returns:
         Dict: batch of tokenized input text.
     """
-    if isinstance(tokenizer, BertTokenizer):
-        tokenizer = tokenizer.from_pretrained("allenai/scibert_scivocab_uncased", return_dict=False)
+    tokenizer = tokenizer.from_pretrained("allenai/scibert_scivocab_uncased", return_dict=False)
     encoded_inputs = tokenizer(batch["text"].tolist(), return_tensors="np", padding="longest")
     return dict(ids=encoded_inputs["input_ids"], masks=encoded_inputs["attention_mask"], targets=np.array(batch["tag"]))
 
